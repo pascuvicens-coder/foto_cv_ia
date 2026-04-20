@@ -435,21 +435,32 @@ document.getElementById('photoForm').addEventListener('submit', async function(e
   const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xojyljwv';
 
   try {
-    const toBase64 = file => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+    const CLOUDINARY_CLOUD = 'dnsplbitu';
+    const CLOUDINARY_PRESET = 'Foto Cv';
 
-    const selfieB64 = await toBase64(selfie);
-    const estiloB64 = await toBase64(estilo);
+    async function uploadToCloudinary(file, label) {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('upload_preset', CLOUDINARY_PRESET);
+      fd.append('folder', 'fotocv');
+      fd.append('public_id', label + '_' + Date.now());
+      const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+        method: 'POST', body: fd
+      });
+      const data = await r.json();
+      return data.secure_url;
+    }
 
+    btn.textContent = '⏳ Subiendo fotos...';
+    const selfieUrl = await uploadToCloudinary(selfie, 'selfie');
+    const estiloUrl = await uploadToCloudinary(estilo, 'estilo');
+
+    btn.textContent = '⏳ Enviando solicitud...';
     const formData = new FormData();
     formData.append('email', email);
     formData.append('trabajo', trabajo);
-    formData.append('selfie', selfie, selfie.name);
-    formData.append('estilo', estilo, estilo.name);
+    formData.append('selfie_url', selfieUrl);
+    formData.append('estilo_url', estiloUrl);
 
     const response = await fetch(FORMSPREE_ENDPOINT, {
       method: 'POST',
@@ -473,3 +484,4 @@ document.getElementById('photoForm').addEventListener('submit', async function(e
 
 </body>
 </html>
+  
